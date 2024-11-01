@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:dots_indicator/dots_indicator.dart';
 import 'package:flutter/material.dart';
 import 'package:travel_app/Home_Page/button_widget.dart';
@@ -39,37 +41,55 @@ class _HomePageState extends State<HomePage> {
 
   late PageController _pageController;
   late Timer _timer;
-  int currentPage = 0; //* use by DotsIndicator
-  int nextPage = 1; //* use by page controller
+  int currentPage = 0;
+  bool isPlaying = true;
+
+  List<Map<String, String>> get extendedList {
+    return [list.last, ...list, list.first];
+  }
 
   @override
   void initState() {
     super.initState();
-    _pageController = PageController();
+    _pageController = PageController(initialPage: 1);
 
     _pageController.addListener(() {
+      int page = _pageController.page!.round();
       setState(() {
-        currentPage = _pageController.page!.round(); //double to int
+        currentPage = page - 1;
       });
+
+      if (page == extendedList.length - 1) {
+        _pageController.jumpToPage(1);
+      } else if (page == 0) {
+        _pageController.jumpToPage(extendedList.length - 2);
+      }
     });
 
+    startAutoSlide();
+  }
+
+  void startAutoSlide() {
     _timer = Timer.periodic(
-      const Duration(seconds: 4),
+      const Duration(seconds: 2),
       (timer) {
-        nextPage = currentPage + 1;
-
-        if (nextPage == list.length) {
-          nextPage = 0;
-          currentPage = 0;
+        if (isPlaying) {
+          int nextPage = _pageController.page!.round() + 1;
+          _pageController.animateToPage(
+            nextPage,
+            duration: const Duration(seconds: 2),
+            curve: Curves.easeInOut,
+          );
         }
-
-        _pageController.animateToPage(
-          nextPage,
-          duration: const Duration(seconds: 2),
-          curve: Curves.easeInOut,
-        );
       },
     );
+  }
+
+  void stopAutoSlide() {
+    setState(() {
+      isPlaying = false;
+    });
+    _timer.cancel();
   }
 
   @override
@@ -90,23 +110,26 @@ class _HomePageState extends State<HomePage> {
             height: height * 0.8,
             child: Stack(
               children: [
-                PageView(
+                PageView.builder(
+                  physics: const NeverScrollableScrollPhysics(),
                   controller: _pageController,
-                  children: list.map((iterateItem) {
+                  itemCount: extendedList.length,
+                  itemBuilder: (context, index) {
+                    final item = extendedList[index];
                     return ScrollableScreen(
-                      caption: iterateItem['caption'] ?? '',
-                      subCaption: iterateItem['subCaption'] ?? '',
-                      imageUrl: iterateItem['imageUrl'] ?? '',
+                      caption: item['caption'] ?? '',
+                      subCaption: item['subCaption'] ?? '',
+                      imageUrl: item['imageUrl'] ?? '',
                     );
-                  }).toList(),
+                  },
                 ),
                 Positioned(
-                  bottom: height * 0.2, // Position 20 pixels above the bottom
+                  bottom: height * 0.2,
                   left: 0,
                   right: 0,
                   child: Center(
                     child: DotsIndicator(
-                      dotsCount: list.length,
+                      dotsCount: list.length, // Show only real items in dots
                       position: currentPage.toInt(),
                       decorator: DotsDecorator(
                         shape: CircleBorder(
@@ -118,9 +141,8 @@ class _HomePageState extends State<HomePage> {
                         color: Colors.white,
                         spacing: const EdgeInsets.all(8.0),
                         activeColor: Colors.white,
-                        size: const Size(8.0, 8.0), // Size of inactive dots
-                        activeSize:
-                            const Size(40.0, 12.0), // Size of active dot
+                        size: const Size(8.0, 8.0),
+                        activeSize: const Size(40.0, 12.0),
                         activeShape: RoundedRectangleBorder(
                           side:
                               const BorderSide(color: Colors.black, width: 0.1),
@@ -133,7 +155,9 @@ class _HomePageState extends State<HomePage> {
               ],
             ),
           ),
-          ButtonWidget()
+          ButtonWidget(
+            onPress: stopAutoSlide,
+          ),
         ],
       ),
     );

@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
 
 class ButtonWidget extends StatelessWidget {
+  final VoidCallback onPress;
+  ButtonWidget({
+    super.key,
+    required this.onPress,
+  });
   @override
   Widget build(BuildContext context) {
     double height = MediaQuery.of(context).size.height;
@@ -14,16 +19,18 @@ class ButtonWidget extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
             child: Container(
               alignment: Alignment.center,
-              padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(16),
                 color: const Color.fromARGB(255, 2, 177, 130),
               ),
-              child: Text(
-                'Get Started',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
+              child: TextButton(
+                onPressed: onPress,
+                child: Text(
+                  'Get Started',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ),
